@@ -1,0 +1,26 @@
+LIBRARY basswasapi
+EXPORTS
+    BASS_WASAPI_CheckFormat     @1
+    BASS_WASAPI_Free           @2
+    BASS_WASAPI_GetCPU         @3
+    BASS_WASAPI_GetData        @4
+    BASS_WASAPI_GetDevice      @5
+    BASS_WASAPI_GetDeviceInfo  @6
+    BASS_WASAPI_GetDeviceLevel @7
+    BASS_WASAPI_GetInfo        @8
+    BASS_WASAPI_GetLevel       @9
+    BASS_WASAPI_GetLevelEx     @10
+    BASS_WASAPI_GetMute        @11
+    BASS_WASAPI_GetVersion     @12
+    BASS_WASAPI_GetVolume      @13
+    BASS_WASAPI_Init           @14
+    BASS_WASAPI_IsStarted      @15
+    BASS_WASAPI_Lock           @16
+    BASS_WASAPI_PutData        @17
+    BASS_WASAPI_SetDevice      @18
+    BASS_WASAPI_SetMute        @19
+    BASS_WASAPI_SetNotify      @20
+    BASS_WASAPI_SetVolume      @21
+    BASS_WASAPI_Start          @22
+    BASS_WASAPI_Stop           @23
+

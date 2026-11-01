@@ -1,0 +1,10 @@
+third_party/un4seen/** linguist-vendored
+third_party/un4seen/*.txt -diff
+*.ps1 text eol=crlf
+*.cs text eol=crlf
+*.cpp text eol=crlf
+*.h text eol=crlf
+*.xaml text eol=crlf
+*.xml text eol=crlf
+*.md text eol=crlf
+

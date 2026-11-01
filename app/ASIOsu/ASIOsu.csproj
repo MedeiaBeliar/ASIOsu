@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\ASIOsu.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+    <ProjectReference Include="..\ASIOsu.Core\ASIOsu.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Models.cs" />
+    <Compile Remove="Services\**\*.cs" />
+  </ItemGroup>
+  <Target Name="CopyApplicationPri" AfterTargets="Publish">
+    <PropertyGroup><ApplicationPriPath>$(TargetDir)$(AssemblyName).pri</ApplicationPriPath></PropertyGroup>
+    <Error Condition="!Exists('$(ApplicationPriPath)')" Text="Application resource index was not generated: $(ApplicationPriPath)" />
+    <Copy SourceFiles="$(ApplicationPriPath)" DestinationFolder="$(PublishDir)" />
+  </Target>
+</Project>
+

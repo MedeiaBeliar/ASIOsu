@@ -1,0 +1,11 @@
+.vs/
+artifacts/
+dist/
+**/bin/
+**/obj/
+third_party/sdk/
+*.user
+*.suo
+*.log
+*.obj
+

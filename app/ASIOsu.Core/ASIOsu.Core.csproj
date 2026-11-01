@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\ASIOsu\Models.cs" Link="Models.cs" />
+    <Compile Include="..\ASIOsu\Services\*.cs" Link="Services\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>
+
