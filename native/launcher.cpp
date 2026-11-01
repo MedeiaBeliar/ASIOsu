@@ -194,6 +194,12 @@ int launch_runtime(int count, wchar_t** values, const fs::path& executable) {
 }
 
 void show_error(const std::string& message) {
+    HANDLE error = GetStdHandle(STD_ERROR_HANDLE);
+    if (error != nullptr && error != INVALID_HANDLE_VALUE) {
+        DWORD written = 0;
+        WriteFile(error, message.data(), static_cast<DWORD>(message.size()), &written, nullptr);
+        WriteFile(error, "\r\n", 2, &written, nullptr);
+    }
     int required = MultiByteToWideChar(CP_UTF8, 0, message.c_str(), static_cast<int>(message.size()), nullptr, 0);
     std::wstring wide(static_cast<size_t>(required), L'\0');
     if (required > 0) MultiByteToWideChar(CP_UTF8, 0, message.c_str(), static_cast<int>(message.size()), wide.data(), required);

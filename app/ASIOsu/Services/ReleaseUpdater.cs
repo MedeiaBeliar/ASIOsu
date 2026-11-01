@@ -228,7 +228,8 @@ public sealed class ReleaseUpdater
     }
     private static Version Normalize(Version version) => new(version.Major, version.Minor, Math.Max(0, version.Build));
     private static string Format(Version version) => $"{version.Major}.{version.Minor}.{Math.Max(0, version.Build)}";
-    private static Uri RequireGithub(string? value) => Uri.TryCreate(value, UriKind.Absolute, out Uri? uri) && uri.Scheme == Uri.UriSchemeHttps && uri.Host == "github.com"
+    private static Uri RequireGithub(string? value) => Uri.TryCreate(value, UriKind.Absolute, out Uri? uri) && uri.Scheme == Uri.UriSchemeHttps &&
+        uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
         ? uri : throw new InvalidDataException("GitHub 릴리스 URL이 올바르지 않습니다.");
     private static bool AllowedDownload(Uri uri) => uri.Scheme == Uri.UriSchemeHttps &&
         (uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase) || uri.Host.EndsWith(".githubusercontent.com", StringComparison.OrdinalIgnoreCase));

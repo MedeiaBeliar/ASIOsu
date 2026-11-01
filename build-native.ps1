@@ -26,5 +26,20 @@ Copy-Item -LiteralPath (Join-Path $root 'third_party\un4seen\x64\bassasio.dll') 
     (Join-Path $root 'tests\native_contract.cpp') "/link" "/LIBPATH:$library" bassasio.lib `
     ole32.lib "/OUT:$(Join-Path $out 'native_contract.exe')"
 if($LASTEXITCODE -ne 0){throw "Native contract test build failed with exit code $LASTEXITCODE."}
+New-Item -ItemType Directory -Path (Join-Path $out 'fake') -Force | Out-Null
+& $cl /nologo /std:c++20 /EHsc /W4 /WX $optimise /MT /LD /DUNICODE /D_UNICODE "/I$include" `
+    "/Fo:$(Join-Path $out 'fake_asio.obj')" (Join-Path $root 'tests\fake_asio.cpp') "/link" `
+    "/OUT:$(Join-Path $out 'fake\bassasio.dll')" "/IMPLIB:$(Join-Path $out 'fake\bassasio.lib')"
+if($LASTEXITCODE -ne 0){throw "Fake ASIO build failed with exit code $LASTEXITCODE."}
+& $cl /nologo /std:c++20 /EHsc /W4 /WX $optimise /MT /DUNICODE /D_UNICODE "/I$include" `
+    "/Fo:$(Join-Path $out 'bridge_active.obj')" (Join-Path $root 'tests\bridge_active.cpp') "/link" `
+    "/OUT:$(Join-Path $out 'bridge_active.exe')"
+if($LASTEXITCODE -ne 0){throw "Bridge active test build failed with exit code $LASTEXITCODE."}
+$fixture=Join-Path $out 'bridge-active-fixture'
+New-Item -ItemType Directory -Path $fixture -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $out 'basswasapi.dll') -Destination $fixture -Force
+Copy-Item -LiteralPath (Join-Path $out 'fake\bassasio.dll') -Destination $fixture -Force
+& (Join-Path $out 'bridge_active.exe') $fixture
+if($LASTEXITCODE -ne 0){throw "Bridge active-path test failed with exit code $LASTEXITCODE."}
 Write-Output "PASS: independent native bridge built at $out"
 
