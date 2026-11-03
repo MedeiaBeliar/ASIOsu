@@ -41,5 +41,10 @@ Copy-Item -LiteralPath (Join-Path $out 'basswasapi.dll') -Destination $fixture -
 Copy-Item -LiteralPath (Join-Path $out 'fake\bassasio.dll') -Destination $fixture -Force
 & (Join-Path $out 'bridge_active.exe') $fixture
 if($LASTEXITCODE -ne 0){throw "Bridge active-path test failed with exit code $LASTEXITCODE."}
+New-Item -ItemType Directory -Path (Join-Path $out 'latency') -Force | Out-Null
+& $cl /nologo /std:c++20 /EHsc /W4 /WX $optimise /MT /DUNICODE /D_UNICODE "/I$include" `
+    "/Fo:$(Join-Path $out 'latency_capture.obj')" (Join-Path $root 'tests\latency\latency_capture.cpp') "/link" `
+    user32.lib "/OUT:$(Join-Path $out 'latency\latency_capture.exe')"
+if($LASTEXITCODE -ne 0){throw "Latency capture tool build failed with exit code $LASTEXITCODE."}
 Write-Output "PASS: independent native bridge built at $out"
 
