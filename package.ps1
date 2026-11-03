@@ -6,7 +6,7 @@ $stage=Join-Path $root 'artifacts\publish'
 $manifestFiles=@(Get-ChildItem -LiteralPath $stage -File -Recurse | Where-Object {$_.Name -ne 'manifest.json'} | ForEach-Object {
     @{path=$_.FullName.Substring($stage.Length+1);size=$_.Length;sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash}
 })
-@{product='ASIOsu';version='1.0.0';target='Windows x64';built=[DateTimeOffset]::Now.ToString('O');files=$manifestFiles} |
+@{product='ASIOsu';version='1.0.1';target='Windows x64';built=[DateTimeOffset]::Now.ToString('O');files=$manifestFiles} |
     ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $stage 'manifest.json') -Encoding utf8
 $dist=Join-Path $root 'dist';New-Item -ItemType Directory -Path $dist -Force | Out-Null
 $zip=Join-Path $dist 'ASIOsu-win-x64.zip'

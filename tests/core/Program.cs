@@ -47,6 +47,11 @@ try
     Check(configured.Contains("AudioUseExperimentalWasapi = True"), "experimental callback enabled");
     Check(manager.LoadRoute(game) == route, "route round-trip");
 
+    string firstRestorePoint = File.ReadAllText(Path.Combine(data, "active-backup.txt"));
+    await manager.InstallAsync(game, route);
+    Check(manager.Inspect(game).State == InstallState.Installed, "installed update state");
+    Check(File.ReadAllText(Path.Combine(data, "active-backup.txt")) == firstRestorePoint, "installed update retains original restore point");
+
     await manager.RestoreAsync(game);
     Check(manager.Inspect(game).State == InstallState.Original, "restored state");
     Check(Same(Path.Combine(gameDirectory, "basswasapi.dll"), realWasapi), "BASSWASAPI original restored");

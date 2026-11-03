@@ -50,6 +50,7 @@ public sealed class InstallationManager
     {
         CheckCompatibility(game);
         Directory.CreateDirectory(data);
+        bool keepExistingRestorePoint = HasActiveRestorePoint(game);
         string transaction = Path.Combine(data, "backups", DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(transaction);
         var record = new RestoreRecord(game.Directory, game.FrameworkIni, new List<RestoreFile>());
@@ -61,7 +62,8 @@ public sealed class InstallationManager
         try
         {
             string originalWasapi = FindWasapiOriginal(game)!;
-            File.Copy(originalWasapi, Path.Combine(game.Directory, "basswasapi_original.dll"), true);
+            string preservedWasapi = Path.Combine(game.Directory, "basswasapi_original.dll");
+            if (!SamePath(originalWasapi, preservedWasapi)) File.Copy(originalWasapi, preservedWasapi, true);
 
             string? originalBass = FindBassOriginal(game);
             if (originalBass is not null && !PeInspector.IsVendorBass(Path.Combine(game.Directory, "bass.dll"), "bass.dll"))
@@ -74,7 +76,8 @@ public sealed class InstallationManager
             IniDocument framework = IniDocument.Load(game.FrameworkIni);
             framework.Write("AudioUseExperimentalWasapi", "True");
             framework.Save(game.FrameworkIni);
-            await File.WriteAllTextAsync(Path.Combine(data, "active-backup.txt"), transaction, cancellationToken);
+            if (!keepExistingRestorePoint)
+                await File.WriteAllTextAsync(Path.Combine(data, "active-backup.txt"), transaction, cancellationToken);
         }
         catch
         {
@@ -169,6 +172,26 @@ public sealed class InstallationManager
         return names.Select(name => Path.Combine(game.Directory, name)).FirstOrDefault(path => PeInspector.IsVendorBass(path, "bass.dll"));
     }
 
+    private bool HasActiveRestorePoint(GameLocation game)
+    {
+        try
+        {
+            string pointer = Path.Combine(data, "active-backup.txt");
+            if (!File.Exists(pointer)) return false;
+            string backupRoot = Path.GetFullPath(Path.Combine(data, "backups")).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            string transaction = Path.GetFullPath(File.ReadAllText(pointer).Trim());
+            if (!transaction.StartsWith(backupRoot, StringComparison.OrdinalIgnoreCase)) return false;
+            string recordPath = Path.Combine(transaction, "record.json");
+            if (!File.Exists(recordPath)) return false;
+            RestoreRecord? record = JsonSerializer.Deserialize<RestoreRecord>(File.ReadAllText(recordPath), JsonOptions);
+            return record is not null && SamePath(record.GameDirectory, game.Directory) && SamePath(record.FrameworkIni, game.FrameworkIni);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private static void Backup(string destination, string backup, RestoreRecord record, string? backupName = null)
     {
         string name = backupName ?? Path.GetFileName(destination);
@@ -201,6 +224,8 @@ public sealed class InstallationManager
     private static bool SameFile(string left, string right) => File.Exists(left) && File.Exists(right) &&
         new FileInfo(left).Length == new FileInfo(right).Length &&
         SHA256.HashData(File.ReadAllBytes(left)).SequenceEqual(SHA256.HashData(File.ReadAllBytes(right)));
+    private static bool SamePath(string left, string right) =>
+        Path.GetFullPath(left).Equals(Path.GetFullPath(right), StringComparison.OrdinalIgnoreCase);
     private static int Parse(string? value, int fallback) => int.TryParse(value, out int result) ? result : fallback;
     private static void DeleteIfExists(string path) { if (File.Exists(path)) File.Delete(path); }
 
