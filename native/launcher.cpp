@@ -110,10 +110,23 @@ void wait_for(DWORD process_id) {
     if (result != WAIT_OBJECT_0) throw std::runtime_error("Timed out while waiting for ASIOsu to close.");
 }
 
+void rename_runtime(const fs::path& from, const fs::path& to) {
+    for (int attempt = 0; ; ++attempt) {
+        std::error_code error;
+        fs::rename(from, to, error);
+        if (!error) return;
+        const int code = error.value();
+        const bool locked = code == ERROR_SHARING_VIOLATION || code == ERROR_LOCK_VIOLATION || code == ERROR_ACCESS_DENIED;
+        if (!locked || attempt == 20)
+            throw fs::filesystem_error("rename runtime", from, to, error);
+        Sleep(250);
+    }
+}
+
 void recover_runtime(const fs::path& root) {
     fs::path runtime = root / L"runtime";
     fs::path saved = root / L".asiosu-update-backup" / L"runtime";
-    if (!fs::exists(runtime) && fs::exists(saved)) fs::rename(saved, runtime);
+    if (!fs::exists(runtime) && fs::exists(saved)) rename_runtime(saved, runtime);
 }
 
 int apply_update(int count, wchar_t** values, const fs::path& helper) {
@@ -135,7 +148,11 @@ int apply_update(int count, wchar_t** values, const fs::path& helper) {
     wchar_t* end = nullptr;
     unsigned long pid = wcstoul(pid_text->c_str(), &end, 10);
     if (end == pid_text->c_str() || *end != L'\0') throw std::runtime_error("Update process identifier is invalid.");
+    // A process holds its current directory open on Windows. Leave the old
+    // runtime before waiting for the app or attempting to rename it.
+    fs::current_path(helper.parent_path());
     wait_for(static_cast<DWORD>(pid));
+    recover_runtime(target);
 
     fs::path staging = target / L".asiosu-update-staging";
     fs::path backup = target / L".asiosu-update-backup";
@@ -153,10 +170,10 @@ int apply_update(int count, wchar_t** values, const fs::path& helper) {
         for (const auto& name : root_files)
             if (fs::is_regular_file(target / name)) fs::copy_file(target / name, backup / name, fs::copy_options::overwrite_existing);
         if (fs::exists(target / L"runtime")) {
-            fs::rename(target / L"runtime", backup / L"runtime");
+            rename_runtime(target / L"runtime", backup / L"runtime");
             old_runtime_saved = true;
         }
-        fs::rename(staging, target / L"runtime");
+        rename_runtime(staging, target / L"runtime");
         new_runtime_active = true;
         roots_started = true;
         for (const auto& name : root_files) {
@@ -167,7 +184,7 @@ int apply_update(int count, wchar_t** values, const fs::path& helper) {
     } catch (...) {
         try {
             if (new_runtime_active && fs::exists(target / L"runtime")) fs::remove_all(target / L"runtime");
-            if (old_runtime_saved && fs::exists(backup / L"runtime")) fs::rename(backup / L"runtime", target / L"runtime");
+            if (old_runtime_saved && fs::exists(backup / L"runtime")) rename_runtime(backup / L"runtime", target / L"runtime");
             if (roots_started) for (const auto& name : root_files) {
                 if (fs::exists(target / name)) fs::remove(target / name);
                 if (fs::exists(backup / name)) fs::copy_file(backup / name, target / name, fs::copy_options::overwrite_existing);

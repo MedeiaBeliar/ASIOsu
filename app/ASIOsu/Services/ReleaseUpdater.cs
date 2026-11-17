@@ -121,7 +121,12 @@ public sealed class ReleaseUpdater
         Directory.CreateDirectory(hostDirectory);
         string helper = Path.Combine(hostDirectory, "ASIOsu.UpdateHost." + Guid.NewGuid().ToString("N") + ".exe");
         File.Copy(launcher, helper);
-        var start = new ProcessStartInfo { FileName = helper, UseShellExecute = false };
+        var start = new ProcessStartInfo
+        {
+            FileName = helper,
+            WorkingDirectory = hostDirectory,
+            UseShellExecute = false
+        };
         foreach (string argument in new[] { "--apply-update", "--source", prepared.PackageDirectory, "--target", target,
                      "--wait-pid", Environment.ProcessId.ToString(), "--tag", prepared.Release.Tag }) start.ArgumentList.Add(argument);
         using Process process = Process.Start(start) ?? throw new InvalidOperationException("업데이트 host를 시작하지 못했습니다.");
