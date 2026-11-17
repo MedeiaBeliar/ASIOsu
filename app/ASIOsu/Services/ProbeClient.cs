@@ -5,7 +5,12 @@ namespace ASIOsu.Services;
 
 public sealed class ProbeClient
 {
-    private readonly string executable = Path.Combine(AppContext.BaseDirectory, "tools", "ASIOsu.Probe.exe");
+    private readonly string executable;
+
+    public ProbeClient(string? toolsDirectory = null)
+    {
+        executable = Path.Combine(toolsDirectory ?? Path.Combine(AppContext.BaseDirectory, "tools"), "ASIOsu.Probe.exe");
+    }
 
     public async Task<IReadOnlyList<AsioDriver>> ListAsync(CancellationToken cancellationToken = default)
         => JsonSerializer.Deserialize<List<AsioDriver>>(await RunAsync(["list"], cancellationToken), JsonOptions) ?? [];

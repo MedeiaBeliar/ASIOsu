@@ -36,6 +36,8 @@ public sealed partial class MainWindow : Window
         AppWindow appWindow = AppWindow.GetFromWindowId(Win32Interop.GetWindowIdFromWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)));
         appWindow.Resize(new SizeInt32(1240, 820));
         Activated += MainWindow_Activated;
+        StablePanel.WindowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        Closed += (_, _) => StablePanel.StopCapture();
     }
 
     private async void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
@@ -50,9 +52,12 @@ public sealed partial class MainWindow : Window
 
     private void Navigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-        bool overview = (args.SelectedItem as NavigationViewItem)?.Tag?.ToString() != "route";
-        OverviewPage.Visibility = overview ? Visibility.Visible : Visibility.Collapsed;
-        RoutePage.Visibility = overview ? Visibility.Collapsed : Visibility.Visible;
+        string? page = (args.SelectedItem as NavigationViewItem)?.Tag?.ToString();
+        if (OverviewPage is null || RoutePage is null || StablePanel is null) return;
+        OverviewPage.Visibility = page is "stable" or "route" ? Visibility.Collapsed : Visibility.Visible;
+        RoutePage.Visibility = page == "route" ? Visibility.Visible : Visibility.Collapsed;
+        StablePanel.Visibility = page == "stable" ? Visibility.Visible : Visibility.Collapsed;
+        if (page == "stable") StablePanel.EnsureLoaded();
     }
 
     private async Task RefreshAsync()

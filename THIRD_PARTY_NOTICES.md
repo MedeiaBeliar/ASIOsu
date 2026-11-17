@@ -1,7 +1,7 @@
 # Third-party notices
 
 ASIOsu uses the official BASSASIO SDK from Un4seen Developments. The release
-package includes the unmodified 64-bit `bassasio.dll`. BASSASIO is free for
+package includes the unmodified 32-bit and 64-bit builds of `bassasio.dll`. BASSASIO is free for
 non-commercial use; other uses require the appropriate licence from Un4seen
 Developments. See `third_party/un4seen/bassasio.txt` and
 <https://www.un4seen.com/bassasio.html>.

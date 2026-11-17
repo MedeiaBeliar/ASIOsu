@@ -3,15 +3,17 @@ $ErrorActionPreference='Stop'
 $root=$PSScriptRoot
 & (Join-Path $root 'tools\build-icon.ps1')
 & (Join-Path $root 'build-native.ps1') -Configuration $Configuration
+& (Join-Path $root 'build-loopback.ps1')
 $artifacts=Join-Path $root 'artifacts'
 $publish=Join-Path $artifacts 'publish'
 $appOutput=Join-Path $artifacts 'app'
 $probeOutput=Join-Path $artifacts 'probe'
+$stableProbeOutput=Join-Path $artifacts 'probe-stable'
 function Assert-Child([string]$Path){
     $full=[IO.Path]::GetFullPath($Path);$base=[IO.Path]::GetFullPath($artifacts)+[IO.Path]::DirectorySeparatorChar
     if(!$full.StartsWith($base,[StringComparison]::OrdinalIgnoreCase)){throw "Build path escaped artifacts: $full"}
 }
-foreach($path in @($publish,$appOutput,$probeOutput)){
+foreach($path in @($publish,$appOutput,$probeOutput,$stableProbeOutput)){
     Assert-Child $path
     if(Test-Path -LiteralPath $path){Remove-Item -LiteralPath $path -Recurse -Force}
     New-Item -ItemType Directory -Path $path -Force | Out-Null
@@ -20,6 +22,8 @@ dotnet publish (Join-Path $root 'app\ASIOsu\ASIOsu.csproj') -c $Configuration -p
 if($LASTEXITCODE -ne 0){throw 'WinUI application publish failed.'}
 dotnet publish (Join-Path $root 'probe\ASIOsu.Probe\ASIOsu.Probe.csproj') -c $Configuration -r win-x64 --self-contained true -o $probeOutput
 if($LASTEXITCODE -ne 0){throw 'ASIO probe publish failed.'}
+dotnet publish (Join-Path $root 'probe\ASIOsu.Probe\ASIOsu.Probe.csproj') -c $Configuration -p:PlatformTarget=x86 -r win-x86 --self-contained true -o $stableProbeOutput
+if($LASTEXITCODE -ne 0){throw 'Stable ASIO probe publish failed.'}
 
 $runtime=Join-Path $publish 'runtime'
 New-Item -ItemType Directory -Path $runtime -Force | Out-Null
@@ -27,6 +31,10 @@ Copy-Item -Path (Join-Path $appOutput '*') -Destination $runtime -Recurse -Force
 $tools=Join-Path $runtime 'tools';New-Item -ItemType Directory -Path $tools -Force | Out-Null
 Copy-Item -Path (Join-Path $probeOutput '*') -Destination $tools -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $root 'artifacts\native\bassasio.dll') -Destination $tools -Force
+$stableTools=Join-Path $tools 'stable';New-Item -ItemType Directory -Path $stableTools -Force | Out-Null
+Copy-Item -Path (Join-Path $stableProbeOutput '*') -Destination $stableTools -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $root 'artifacts\stable-loopback\bassasio.dll') -Destination $stableTools -Force
+Copy-Item -LiteralPath (Join-Path $root 'artifacts\stable-loopback\ASIOsu.Loopback.exe') -Destination $stableTools -Force
 $payload=Join-Path $runtime 'payload';New-Item -ItemType Directory -Path $payload -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $root 'artifacts\native\basswasapi.dll') -Destination $payload -Force
 Copy-Item -LiteralPath (Join-Path $root 'artifacts\native\bassasio.dll') -Destination $payload -Force

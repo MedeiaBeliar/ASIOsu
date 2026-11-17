@@ -1,6 +1,6 @@
 # ASIOsu
 
-ASIOsu routes the complete osu!lazer mix to a native ASIO output on Windows. It is an independent implementation built around the public BASSWASAPI and BASSASIO interfaces. It does not patch managed game assemblies or inject code into a running process.
+ASIOsu routes osu!lazer and osu!stable audio to ASIO on Windows. Lazer uses a BASSWASAPI bridge. Stable uses Windows process loopback capture.
 
 This project is unofficial and is not affiliated with osu! or ppy Pty Ltd.
 
@@ -26,7 +26,7 @@ osu!lazer mix -> original bass.dll -> ASIOsu basswasapi.dll -> BASSASIO -> stere
 - Checks stable GitHub Releases and verifies the release-asset digest and every packaged file before updating.
 - Exits when the window closes. There is no tray process or resident service.
 
-## Usage
+## osu!lazer setup
 
 1. Extract `ASIOsu-win-x64.zip` into a new directory.
 2. Close osu!lazer.
@@ -37,6 +37,14 @@ osu!lazer mix -> original bass.dll -> ASIOsu basswasapi.dll -> BASSASIO -> stere
 7. Start osu!lazer normally.
 
 The app refuses installation, restoration, and installed-route writes while osu!lazer is running. An ASIO driver may also need to be released by other applications before its channels can be inspected.
+
+## osu!stable setup
+
+1. Run `ASIOsu.exe` and open the **osu!stable** tab. If needed, select the folder containing `osu!.exe`.
+2. With stable closed, choose its Windows playback device and save the setting. Stable reads it the next time it starts.
+3. Start stable, select your ASIO driver and stereo output pair, then connect from the same tab.
+
+Stable keeps playing through its selected Windows device while ASIOsu sends a copy to ASIO. If you hear both outputs, choose a separate Windows playback device you are not monitoring. The stable tab requires [Windows process loopback support](https://learn.microsoft.com/en-us/samples/microsoft/windows-classic-samples/applicationloopbackaudio-sample/) and a 32-bit ASIO driver.
 
 ## Files used in the game directory
 

@@ -18,10 +18,34 @@ Directory.CreateDirectory(gameDirectory);
 Directory.CreateDirectory(payload);
 try
 {
+    string stableCfg = Path.Combine(gameDirectory, $"osu!.{Environment.UserName}.cfg");
+    File.WriteAllBytes(Path.Combine(gameDirectory, "osu!.exe"), [0x4d, 0x5a]);
+    var utf8Bom = new System.Text.UTF8Encoding(true);
+    File.WriteAllText(stableCfg, "VolumeMusic = 42\r\nAudioDevice = Original device\r\nSkin = 테스트\r\n", utf8Bom);
+    Check(StableAudio.ReadDevice(gameDirectory) == "Original device", "read stable output device");
+    StableAudio.SaveDevice(gameDirectory, "별도 출력 (test)");
+    byte[] expectedCfg = [.. utf8Bom.GetPreamble(), .. utf8Bom.GetBytes(
+        "VolumeMusic = 42\r\nAudioDevice = 별도 출력 (test)\r\nSkin = 테스트\r\n")];
+    Check(File.ReadAllBytes(stableCfg).SequenceEqual(expectedCfg), "stable output edit preserves BOM, CRLF and unrelated settings");
+    StableAudio.SaveDevice(gameDirectory, "");
+    Check(StableAudio.ReadDevice(gameDirectory) == "", "stable Windows default");
+    File.WriteAllText(stableCfg, "VolumeMusic = 42\nSkin = 테스트", new System.Text.UTF8Encoding(false));
+    StableAudio.SaveDevice(gameDirectory, "Separate device");
+    Check(File.ReadAllText(stableCfg) == "VolumeMusic = 42\nSkin = 테스트\nAudioDevice = Separate device\n", "stable missing key added");
+    if (args.Contains("--stable-only", StringComparer.OrdinalIgnoreCase))
+    {
+        Console.WriteLine($"PASS: {assertions} stable configuration assertions");
+        return;
+    }
+
     string repository = args.Length > 0 ? Path.GetFullPath(args[0]) : throw new Exception("Repository path argument is required.");
-    string realBass = @"C:\Users\Hebi\AppData\Local\osulazer\current\bass_real.dll";
-    string realWasapi = @"C:\Users\Hebi\AppData\Local\osulazer\current\basswasapi_real.dll";
-    if (!File.Exists(realBass) || !File.Exists(realWasapi)) throw new Exception("Verified local BASS originals are unavailable.");
+    string fixtureDirectory = Environment.GetEnvironmentVariable("ASIOSU_TEST_LAZER_DIR") ?? GameDiscovery.Find().Directory;
+    string realBass = FindOriginal("bass.dll", "bass_real.dll");
+    string realWasapi = FindOriginal("basswasapi_original.dll", "basswasapi_real.dll", "basswasapi.dll");
+
+    string FindOriginal(params string[] candidates) => candidates.Select(name => Path.Combine(fixtureDirectory, name))
+        .FirstOrDefault(path => PeInspector.IsVendorBass(path, Path.GetFileName(path)))
+        ?? throw new InvalidOperationException($"Verified BASS fixture unavailable in {fixtureDirectory}: {string.Join(", ", candidates)}");
 
     File.WriteAllBytes(Path.Combine(gameDirectory, "osu!.exe"), [0x4d, 0x5a]);
     File.Copy(realBass, Path.Combine(gameDirectory, "bass.dll"));
